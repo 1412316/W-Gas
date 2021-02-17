@@ -1,0 +1,253 @@
+import React from 'react';
+import AddProductPopup from "./AddProductPopup";
+
+import getAllUserApi from 'getAllUserApi';
+import { push } from "react-router-redux";
+import Form from 'react-validation/build/form';
+import Input from 'react-validation/build/input';
+import Button from 'react-validation/build/button';
+import showToast from "showToast";
+import importProductsFromExcelAPI from "importProductsFromExcelAPI";
+import { connect } from "react-redux";
+import required from "required";
+import Select from "react-select";
+import Constants from "Constants";
+import getDestinationUserAPI from "getDestinationUserAPI";
+
+import { lang } from 'moment';
+
+let file = null;
+
+class AddProductExcelPopup extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            message: "",
+            messageErr: "",
+            chooseType: [
+                { value: 0, label: "Tại thương nhân sở hữu", name: "Thương nhân sở hữu" },
+                { value: 1, label: "Tại sửa chữa", name: "Sửa chữa" },
+                { value: 2, label: "Tại công ty con", name: "Công ty con" }
+            ],
+            dataChoose: 0,
+            ListUserSubmitID: "",
+            ListCtyCon: "",
+        }
+    }
+
+    async componentDidMount() {
+        await this.getListFixer();
+    }
+
+    handleFileUpload(event) {
+        file = event.target.files[0]
+    }
+    handleChangeGeneral = (langValue) => {
+        this.setState({ dataChoose: langValue.value, ListUserSubmitID: "" });
+
+    }
+    handleChangeFixer = (langValue) => {
+        this.setState({ ListUserSubmit: langValue, ListUserSubmitID: langValue.id });
+
+    }
+
+    handleChangeCty = (langValue) => {
+        this.setState({
+            ListCtyCon: langValue,
+            ListUserSubmitID: langValue.id
+        })
+    }
+    async submit(event) {
+        event.preventDefault();
+        if (!file) showToast('Vui lòng chọn file!', 3000);
+        this.setState({ isLoading: true });
+        const result = await importProductsFromExcelAPI(file, this.state.ListUserSubmitID);
+        this.setState({ isLoading: false });
+        console.log(result);
+        if (result && result.status === 200) {
+            if (result.data.status === false && result.data.err !== "") {
+                const dataErr = result.data.err.replace(/;/g, "\n")
+                this.setState({ messageErr: dataErr })
+                //showToast(dataErr, 3000);
+            } else {
+                this.setState({ message: 'Tất cả mã nhập vào hệ thống đều thành công' })
+                //showToast('Tất cả mã nhập vào hệ thống đều thành công', 3000);
+                this.props.refresh();
+            }
+            window.location.reload();
+            return;
+        } else {
+            showToast("Xảy ra lỗi trong quá trình import. Vui lòng kiểm tra lại dữ liệu", 2000);
+        }
+        return;
+        $("#import-product").modal('hide');
+        return;
+    }
+    // async getListFixer() {
+    //     const dataUsers = await getDestinationUserAPI(
+    //         Constants.FACTORY,
+    //         "",
+    //         Constants.OWNER
+    //     );
+    //     if (dataUsers) {
+    //         if (dataUsers.status === Constants.HTTP_SUCCESS_BODY) {
+    //             console.log(dataUsers);
+    //             let listFactoryBacks = [];
+    //             for (let i = 0; i < dataUsers.data.length; i++) {
+    //                 listFactoryBacks.push({
+    //                     value: dataUsers.data[i].id,
+    //                     label: dataUsers.data[i].name,
+    //                     ...dataUsers.data[i],
+    //                 });
+    //             }
+
+    //             this.setState({ listUser: listFactoryBacks });
+    //         } else {
+    //             showToast(
+    //                 dataUsers.data.message
+    //                     ? dataUsers.data.message
+    //                     : dataUsers.data.err_msg,
+    //                 2000
+    //             );
+    //         }
+
+    //         //this.setState({image_link: profile.data.company_logo});
+    //     } else {
+    //         showToast("Xảy ra lỗi trong quá trình lấy dữ liệu");
+    //     }
+    // }
+
+    onreload = () => {
+        window.location.reload()
+
+    }
+
+    async getListFixer() {
+        const dataUsers = await getDestinationUserAPI(
+            Constants.FACTORY,
+            "",
+            Constants.OWNER
+        );
+        console.log('ducvidai', dataUsers)
+        if (dataUsers) {
+            if (dataUsers.status === Constants.HTTP_SUCCESS_BODY) {
+                console.log(dataUsers);
+                let listFactoryBacks = [];
+                for (let i = 0; i < dataUsers.data.length; i++) {
+                    listFactoryBacks.push({
+                        value: dataUsers.data[i].id,
+                        label: dataUsers.data[i].name,
+                        ...dataUsers.data[i],
+                    });
+                }
+
+                this.setState({ listUserFixer: listFactoryBacks });
+            } else {
+                showToast(
+                    dataUsers.data.message
+                        ? dataUsers.data.message
+                        : dataUsers.data.err_msg,
+                    2000
+                );
+            }
+
+            //this.setState({image_link: profile.data.company_logo});
+        } else {
+            showToast("Xảy ra lỗi trong quá trình lấy dữ liệu");
+        }
+    }
+
+    render() {
+        return (
+            <div className="modal fade" id="import-product" tabIndex="-1" >
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Đưa Sản Phẩm Vào Bằng File Excel</h5>
+                            <button type="button" className="close" data-dismiss="modal" onClick={this.onreload} >
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+
+                            <Form ref={c => {
+                                this.form = c
+                            }} className="card" onSubmit={(event) => this.submit(event)}>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>File</label>
+                                                <Input className="form-control" type="file" name="upload_file"
+                                                    onChange={this.handleFileUpload}
+                                                    validations={[required]} />
+                                            </div>
+
+                                        </div>
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Chọn vị trí bình</label>
+                                                <Select
+                                                    options={this.state.chooseType}
+                                                    onChange={this.handleChangeGeneral.bind(this)}
+                                                    placeholder="Chọn..."
+                                                    value={this.state.dataChoose}
+                                                />
+                                            </div>
+                                        </div>
+                                        {this.state.dataChoose === 1 ? (<div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Danh sách sửa chữa</label>
+                                                <Select
+                                                    options={this.props.listUserFixer}
+                                                    onChange={this.handleChangeFixer.bind(this)}
+                                                    placeholder="Chọn..."
+                                                    value={this.state.ListUserSubmitID}
+                                                />
+                                            </div>
+                                        </div>) : null}
+                                        {this.state.dataChoose === 2 ? (<div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Danh sách công ty con</label>
+                                                <Select
+                                                    options={this.props.listUsersPartner}
+                                                    onChange={this.handleChangeCty.bind(this)}
+                                                    placeholder="chọn..."
+                                                    value={this.state.ListUserSubmitID}
+                                                />
+                                            </div>
+                                        </div>) : null}
+                                    </div>
+
+                                    {this.state.messageErr !== "" ? (<div className="row">
+                                        <label style={{
+                                            color: "#f96868",
+                                            fontSize: 12,
+                                            whiteSpace: "pre-line"
+                                        }}>{this.state.messageErr}</label>
+                                    </div>) : null}
+                                    {this.state.message !== "" ? (<div className="row">
+                                        <label style={{
+                                            color: "#15c377",
+                                            fontSize: 12,
+                                            whiteSpace: "pre-line"
+                                        }}>{this.state.message}</label>
+                                    </div>) : null}
+                                </div>
+
+                                <footer className="card-footer text-center">
+                                    <Button className="btn btn-primary" type="submit">OK</Button>
+                                    <button className="btn btn-secondary" type="reset" data-dismiss="modal"
+                                        style={{ marginLeft: "10px" }} onClick={this.onreload}>Đóng
+                                    </button>
+                                </footer>
+                            </Form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+export default connect()(AddProductExcelPopup)

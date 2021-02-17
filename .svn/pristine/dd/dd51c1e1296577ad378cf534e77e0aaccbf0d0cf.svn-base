@@ -1,0 +1,219 @@
+import React from 'react';
+import PropType from 'prop-types';
+import Form from 'react-validation/build/form';
+import Input from 'react-validation/build/input';
+import Select from 'react-validation/build/select';
+import Button from 'react-validation/build/button';
+import required from 'required';
+import showToast from "showToast";
+import Constant from 'Constants'
+import getUserCookies from "getUserCookies";
+
+
+class AddProductPopup extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.form = null;
+        this.state = {
+            color: '',
+            weight: '',
+            checkedDate: '',
+            status: '',
+            emptyOrFull: '',
+            currentImportPrice: 0,
+            user_type: '',
+            user_role: '',
+            valve:''
+        };
+    }
+
+
+    async componentDidMount() {
+        const user_cookies = await getUserCookies();
+        this.setState({user_type: user_cookies.user.userType, user_role: user_cookies.user.userRole}, () => {
+        })
+    }
+
+    componentDidUpdate(prevProps) {
+
+    }
+
+
+    fileChangedHandler = (event) => {
+        this.setState({selectedFile: event.target.files[0]})
+    };
+
+
+    async submit(event) {
+
+        event.preventDefault();
+        let data = this.form.getValues();
+        
+        console.log(Constant.PLACESTATUS_ENUM[0].key);
+        await this.props.addProduct(data.serial,
+            data.color,
+            data.checkedDate, data.weight,
+            this.state.user_type === "Factory" ? Constant.PLACESTATUS_ENUM[0].key : Constant.PLACESTATUS_ENUM[4].key,"EMPTY",
+            data.currentImportPrice, this.props.listManufacturers[parseInt(data.manufacture)].id,
+            data.valve);
+
+        const modal = $("#create-product");
+        modal.modal('hide');
+        return;
+    }
+
+    render() {
+        return (
+            <div className="modal fade" id="create-product" tabIndex="-1">
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Tạo mới sản phẩm</h5>
+                            <button type="button" className="close" data-dismiss="modal">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+
+                            <Form ref={c => {
+                                this.form = c
+                            }} className="card" onSubmit={(event) => this.submit(event)}>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Mã</label>
+                                                <Input className="form-control" type="text" name="serial"
+                                                       validations={[required]}/>
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Màu sắc </label>
+                                                {/* <Select className="form-control"
+                                                        name="color"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {Constant.COLOR_ENUM.map((item, index) => <option value={index}
+                                                                                                      key={index}>{item.value}</option>)}
+                                                </Select> */}
+                                                <Input className="form-control" type="text" name="color" id="color" value={this.state.color} validations={[required]} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Loại van </label>
+                                                {/* <Select className="form-control"
+                                                        name="color"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {Constant.COLOR_ENUM.map((item, index) => <option value={index}
+                                                                                                      key={index}>{item.value}</option>)}
+                                                </Select> */}
+                                                <Input className="form-control" type="text" name="valve" id="color" value={this.state.valve} validations={[required]} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Trọng lượng </label>
+                                                <Input className="form-control" type="number" name="weight" id="weight"
+                                                       value={this.state.weight} validations={[required]}/>
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Giá tham khảo </label>
+                                                <Input className="form-control" type="number" name="currentImportPrice"
+                                                       id="currentImportPrice" value={this.state.currentImportPrice}/>
+                                            </div>
+                                        </div>
+                                        <div className="col-md-6">
+                                            <div>Hình ảnh</div>
+                                            <input type="file" name="logo" data-provide="dropify"
+                                                   onChange={(event) => this.fileChangedHandler(event)}/>
+                                        </div>
+                                    </div>
+
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Ngày kiểm định</label>
+                                                <div className="input-group">
+                                                    <Input ref={this.expiration_dateRef} type="text"
+                                                           className="form-control"
+                                                           value={this.state.checkedDate} validations={[required]}
+                                                           name="checkedDate" id="checkedDate"
+                                                           data-date-format="dd/mm/yyyy"
+                                                           data-provide="datepicker"/>
+                                                    <div className="input-group-append">
+                                                        <span className="input-group-text"><i
+                                                            className="fa fa-calendar"></i></span>
+                                                    </div>
+                                                </div>
+                                                {/* <Input className="form-control" type="datetime" name="checkedDate" id="checkedDate" value={this.state.checkedDate} validations={[required]} />*/}
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Thương hiệu</label>
+                                                <Select className="form-control"
+                                                        name="manufacture"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.props.listManufacturers.map((item, index) => <option
+                                                        value={index} key={index}>{item.name}</option>)}
+                                                </Select>
+                                            </div>
+                                            {/* <div className="form-group">
+                                                <label>Thương nhân sở hữu</label>
+                                                <Select className="form-control"
+                                                        name="factory"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.props.listFactory.map((item, index) => <option value={index}>{item.name}</option>)}
+                                                </Select>
+                                            </div> */}
+                                            {/* <div className="form-group">
+                                                <label>Cửa hàng bán lẻ</label>
+                                                <Select className="form-control"
+                                                        name="agency"
+                                                        >
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.props.listAgency.map((item, index) => <option value={index}>{item.name}</option>)}
+                                                </Select>
+                                            </div> */}
+                                        </div>
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>{this.state.user_type === "Factory" ? "Vị trí hiện tại: Tại thương nhân sở hữu" : "Vị trí hiện tại: Tại cửa hàng bán lẻ"} </label>
+                                            </div>
+                                        </div>
+
+                                        <div className="col-md-6">
+
+
+                                        </div>
+
+                                    </div>
+
+                                    {/*<div className="form-group">*/}
+                                    {/*<label>Các vị trí</label>*/}
+                                    {/*<TagAutoComplete getPosition={this.getPosition.bind(this)}*/}
+                                    {/*data={this.state.job_titles}/>*/}
+                                    {/*</div>*/}
+
+                                </div>
+
+                                <footer className="card-footer text-center">
+                                    <Button className="btn btn-primary">Lưu</Button>
+                                    <button className="btn btn-secondary" type="reset" data-dismiss="modal"
+                                            style={{marginLeft: "10px"}}>Đóng
+                                    </button>
+                                </footer>
+                            </Form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+AddProductPopup.propType = {
+    addStore: PropType.func.isRequired,
+    jobMetaData: PropType.object.isRequired,
+    updateStoreImage: PropType.func.isRequired
+};
+
+export default AddProductPopup;

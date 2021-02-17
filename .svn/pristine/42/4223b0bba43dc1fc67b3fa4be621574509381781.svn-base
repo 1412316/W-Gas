@@ -1,0 +1,17 @@
+.recharts-default-legend {
+    display: flex;
+}
+@media (min-width: 992px) {
+    .showReport {
+        .modal-lg {
+            max-width: 101% !important;
+            margin-right: -15px;
+            margin-top: 0;
+        }
+    }
+}
+
+.Select-clear {
+    display: none;
+}
+

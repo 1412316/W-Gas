@@ -1,0 +1,241 @@
+import React from "react";
+import PropType from "prop-types";
+import Form from "react-validation/build/form";
+import Input from "react-validation/build/input";
+import required from "required";
+import isUppercase from "isUppercase";
+import showToast from "showToast";
+import getUserCookies from "./../../../helpers/getUserCookies";
+import callApi from "./../../../util/apiCaller";
+import { Table, Icon, Button } from "antd";
+import { GETREQIMPORT } from "../../../config/config";
+class ListRequest extends React.Component {
+  constructor(props) {
+    super(props);
+    this.form = null;
+    this.state = {
+      listRequest: [],
+    };
+  }
+  //cmt
+  async submit(event) {
+    event.preventDefault();
+
+    //console.log(user_cookies);
+  }
+  async componentDidMount() {
+    const user_cookies = await getUserCookies();
+    let params = {
+      id: user_cookies.user.id,
+    };
+    let token = "Bearer " + user_cookies.token;
+    await callApi("POST", GETREQIMPORT, params, token).then((res) => {
+      this.setState({
+        listRequest: res.data.data,
+      });
+      console.log("data list request: ", res.data.data);
+    });
+  }
+  getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          ref={(node) => {
+            this.searchInput = node;
+          }}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() =>
+            this.handleSearch(selectedKeys, confirm, dataIndex)
+          }
+          style={{ width: 188, marginBottom: 8, display: "block" }}
+        />
+        <Button
+          type="primary"
+          onClick={() => this.handleSearch(selectedKeys, confirm, dataIndex)}
+          icon="search"
+          size="small"
+          style={{ width: 90, marginRight: 8 }}
+        >
+          Search
+        </Button>
+        <Button
+          onClick={() => this.handleReset(clearFilters)}
+          size="small"
+          style={{ width: 90 }}
+        >
+          Reset
+        </Button>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <Icon type="search" style={{ color: filtered ? "#1890ff" : undefined }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
+    onFilterDropdownVisibleChange: (visible) => {
+      if (visible) {
+        setTimeout(() => this.searchInput.select());
+      }
+    },
+    render: (text) =>
+      this.state.searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
+          searchWords={[this.state.searchText]}
+          autoEscape
+          textToHighlight={text.toString()}
+        />
+      ) : (
+        text
+      ),
+  });
+
+  handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm();
+    this.setState({
+      searchText: selectedKeys[0],
+      searchedColumn: dataIndex,
+      listCylinde: [],
+      displayTable: false,
+    });
+  };
+
+  handleReset = (clearFilters) => {
+    clearFilters();
+    this.setState({ searchText: "" });
+  };
+  onGiveListCylinde = (tags) => {
+    this.setState({
+      listCylinde: tags,
+      displayTable: true,
+    });
+  };
+  render() {
+    const columns = [
+      {
+        title: "Id yêu cầu",
+        dataIndex: "id",
+        key: "id",
+       
+      },
+      {
+        title: "Tên công ty",
+        dataIndex: "id_ReqFrom.name",
+        key: "id_ReqFrom.name",
+        
+      },
+      {
+        title: "Danh sách các bình",
+        dataIndex: "detail_Req",
+        key: "detail_Req",
+        render: (tags) => (
+          <Button onClick={() => this.onGiveListCylinde(tags)}>Xem</Button>
+        ),
+      },
+      {
+        title: "Hành động",
+        dataIndex: "orderDate",
+        render: (tags) => <Button>Xác nhận</Button>,
+      },
+      {
+        title: "Trạng thái",
+        dataIndex: "status",
+        key: "status",
+        
+      },
+    ];
+    const columnsCylinder = [
+      {
+        title: "Mã bình",
+        dataIndex: "serial",
+        key: "serial",
+       
+      },
+      {
+        title: "Link ảnh",
+        dataIndex: "img_url",
+        key: "img_url",
+        
+      },
+      {
+        title: "Màu",
+        dataIndex: "color",
+        key: "color",
+        
+      },
+      {
+        title: "Ngày kiểm định",
+        dataIndex: "checkedDate",
+        key: "checkedDate",
+        
+      },
+      {
+        title: "Cân nặng",
+        dataIndex: "weight",
+        key: "weight",
+        
+      },
+      {
+        title: "Giá tham khảo",
+        dataIndex: "currentImportPrice",
+        key: "currentImportPrice",
+        
+      },
+      {
+        title: "Mã thương hiệu",
+        dataIndex: "manufacture",
+        key: "manufacture",
+        
+      },
+    ];
+    return (
+      <div>
+        <div className="modal fade" id="list-request" tabIndex="-1">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Danh sách các yêu cầu tạo bình</h5>
+                <button type="button" className="close" data-dismiss="modal">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <Form className="card">
+                  <div className="card-body">
+                    <div className="row">
+                      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        <Table
+                          columns={columns}
+                          dataSource={this.state.listRequest}
+                        />
+                        {this.state.displayTable && (
+                          <Table
+                            columns={columnsCylinder}
+                            dataSource={this.state.listCylinde}
+                            scroll={{ x: 1300 }}
+                            pagination={{defaultPageSize:5}}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default ListRequest;

@@ -1,0 +1,6 @@
+const urlReactjs = "http://localhost:8080";
+const urlChangePass = urlReactjs + "/#/changepassword";
+const urlChangInformationUser = urlReactjs + "/#/changeinforuser";
+const urlSeeDetailDataExport = urlReactjs + "/#/seetailddataexport";
+const urlDetailHistoryExport=urlReactjs+'/#/seetailhistoryImport';
+export { urlChangePass, urlChangInformationUser, urlSeeDetailDataExport,urlDetailHistoryExport };

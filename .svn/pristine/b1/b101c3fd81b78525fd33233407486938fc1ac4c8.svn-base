@@ -1,0 +1,6 @@
+.recharts-default-legend {
+    display: flex;
+}
+.Select-clear{
+    display: none;
+}

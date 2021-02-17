@@ -1,0 +1,423 @@
+import React from 'react';
+import PropType from 'prop-types';
+import Form from 'react-validation/build/form';
+import Input from 'react-validation/build/input';
+import Select from 'react-validation/build/select';
+import Select2 from 'react-select'
+import Button from 'react-validation/build/button';
+import required from 'required';
+import showToast from "showToast";
+import Constant from 'Constants'
+import getUserCookies from "getUserCookies";
+import { Radio } from 'antd';
+import getDestinationUserAPI from 'getDestinationUserAPI';
+import Constants from "Constants";
+// import getAllUserApi from "getAllUserApi";
+import getAllPartnerAPI from "getPartnerAPI";
+import getAllFactoryAPI from "getAllFactoryAPI";
+import './product.scss'
+class AddProductPopup extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.form = null;
+        this.options = [];
+        this.state = {
+            color: '',
+            weight: '',
+            checkedDate: '',
+            status: '',
+            emptyOrFull: '',
+            currentImportPrice: '',
+            user_type: '',
+            user_role: '',
+            valve: '',
+            checkCongtyCon: 1,
+            value: 1,
+            listconttycon: '',
+            activePage: 1,
+            options: [],
+            options2: [],
+            doitac: '',
+            factoryy: ''
+        };
+    }
+
+    onChange = e => {
+        // console.log('radio checked', e.target.value);
+        e.preventDefault();
+        this.setState({
+            value: e.target.value,
+            factoryy: e.target.value,
+            listconttycon: e.target.value,
+            doitac: e.target.value,
+
+        }, () => {
+            console.log('duc', this.state.value)
+        });
+
+        if (e.target.value === 2) {
+            document.getElementById('listconttycon').style.display = "block";
+            document.getElementById('doitac').style.display = "none";
+            document.getElementById('factoryy').style.display = "none"
+
+        }
+        else if (e.target.value === 3) {
+            document.getElementById('doitac').style.display = "block";
+            document.getElementById('listconttycon').style.display = "none";
+            document.getElementById('factoryy').style.display = "none"
+        } else if (e.target.value === 1) {
+            document.getElementById('factoryy').style.display = "block"
+
+            document.getElementById('listconttycon').style.display = "none"
+            document.getElementById('doitac').style.display = "none"
+            this.setState({
+                listconttycon: '',
+                doitac: ''
+            })
+        }
+
+    };
+
+
+    async getListFixer() {
+        // console.log('luc', dataUsers)
+        const dataUsers = await getDestinationUserAPI(Constants.FACTORY, '', Constants.OWNER);
+        // console.log('dataUser', dataUsers)
+        if (dataUsers) {
+            // console.log('status', dataUsers.status);
+            if (dataUsers.status === Constants.HTTP_SUCCESS_BODY) {
+                // console.log('status OK');
+                // var select = $('<select id="duy">')
+                // this.setState({
+                this.options = dataUsers.data.map((user) => {
+                    return {
+                        value: user.id,
+                        label: user.name
+                    }
+                })
+                // })
+
+            } else {
+                showToast(dataUsers.data.message ? dataUsers.data.message : dataUsers.data.err_msg, 2000);
+            }
+
+        } else {
+            showToast("Xảy ra lỗi trong quá trình lấy dữ liệu");
+        }
+    }
+
+
+    async getAllPartner() {
+        const arr = []
+        const dataUserRelation = await getAllPartnerAPI();
+        // console.log("ducvidai", dataUserRelation)
+        if (dataUserRelation) {
+
+            if (dataUserRelation.status === Constants.HTTP_SUCCESS_BODY) {
+                dataUserRelation.data.map(item => {
+                    arr.push(item.id)
+                })
+
+            } else {
+                showToast(dataUserRelation.data.message ? dataUserRelation.data.message : dataUserRelation.data.err_msg, 2000);
+            }
+
+        } else {
+            showToast("Xảy ra lỗi trong quá trình lấy dữ liệu");
+        }
+
+    }
+
+    async getAllFactory(page = this.state.activePage) {
+        //const jobMetaData = await this.getJobMetaData();
+        const arr = []
+        const dataUsers = await getAllFactoryAPI(page);
+        console.log('doi tac', dataUsers)
+        if (dataUsers) {
+            if (dataUsers.status === Constants.HTTP_SUCCESS_BODY) {
+                // dataUsers.data.data.map(async item => {
+                //     arr.push({ item, checked: false })
+                // })
+
+                this.setState({
+                    options2: dataUsers.data.data.map((user) => {
+                        return {
+                            value: user.id,
+                            label: user.name
+                        }
+                    })
+                })
+            } else {
+                showToast(dataUsers.data.message ? dataUsers.data.message : dataUsers.data.err_msg, 2000);
+            }
+
+
+        } else {
+            showToast("Xảy ra lỗi trong quá trình lấy dữ liệu");
+        }
+    }
+
+    async componentDidMount() {
+        const user_cookies = await getUserCookies();
+        this.setState({ user_type: user_cookies.user.userType, user_role: user_cookies.user.userRole }, () => {
+        })
+        console.log('sdsds')
+        await this.getListFixer();
+        await this.getAllPartner();
+        await this.getAllFactory()
+    }
+
+    componentDidUpdate(prevProps) {
+
+    }
+
+    handleCharacter = (e) => {
+        let target = e.target;
+        let name = target.name;
+        let value = target.value;
+        if (e.keyCode === 69 || e.keyCode === 107 || e.keyCode === 109) {
+            e.preventDefault();
+        }
+        this.setState({
+            [name]: value,
+        });
+    }
+
+    fileChangedHandler = (event) => {
+        this.setState({ selectedFile: event.target.files[0] })
+    };
+
+
+    async submit(event) {
+
+        event.preventDefault();
+        let data = this.form.getValues();
+
+        console.log(Constant.PLACESTATUS_ENUM[0].key);
+        await this.props.addProduct(data.serial,
+            data.color,
+            data.checkedDate, data.weight,
+            this.state.user_type === "Factory" ? Constant.PLACESTATUS_ENUM[0].key : Constant.PLACESTATUS_ENUM[5].key, "EMPTY",
+            data.currentImportPrice, this.props.listManufacturers[parseInt(data.manufacture)].id,
+            data.valve, this.state.listconttycon);
+
+        const modal = $("#create-product");
+        modal.modal('hide');
+        window.location.reload();
+        return;
+
+    }
+
+    render() {
+        const radioStyle = {
+            display: 'block',
+            height: '30px',
+            lineHeight: '30px',
+        };
+        const { value } = this.state;
+        return (
+
+            <div className="modal fade" id="create-product" tabIndex="-1">
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Tạo mới sản phẩm</h5>
+                            <button type="button" className="close" data-dismiss="modal">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+
+                            <Form ref={c => {
+                                this.form = c
+                            }} className="card" onSubmit={(event) => this.submit(event)}>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Mã</label>
+                                                <Input className="form-control" type="text" name="serial"
+                                                    validations={[required]} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Màu sắc </label>
+                                                {/* <Select className="form-control"
+                                                        name="color"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {Constant.COLOR_ENUM.map((item, index) => <option value={index}
+                                                                                                      key={index}>{item.value}</option>)}
+                                                </Select> */}
+                                                <Input className="form-control" type="text" name="color" id="color" value={this.state.color} validations={[required]} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Loại van </label>
+                                                {/* <Select className="form-control"
+                                                        name="color"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {Constant.COLOR_ENUM.map((item, index) => <option value={index}
+                                                                                                      key={index}>{item.value}</option>)}
+                                                </Select> */}
+                                                <Input className="form-control" type="text" name="valve" id="color" value={this.state.valve} validations={[required]} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Trọng lượng </label>
+                                                <Input className="form-control" type="number" name="weight" id="weight"
+                                                    value={this.state.weight}
+                                                    onKeyDown={(event) => this.handleCharacter(event)}
+                                                    validations={[required]} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Giá tham khảo </label>
+                                                <Input className="form-control" type="number" name="currentImportPrice"
+                                                    id="currentImportPrice"
+                                                    onKeyDown={(event) => this.handleCharacter(event)}
+                                                    value={this.state.currentImportPrice} />
+                                            </div>
+                                        </div>
+                                        <div className="col-md-6">
+                                            <div>Hình ảnh</div>
+                                            <input type="file" name="logo" data-provide="dropify"
+                                                onChange={(event) => this.fileChangedHandler(event)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Ngày kiểm định</label>
+                                                <div className="input-group">
+                                                    <Input ref={this.expiration_dateRef} type="text"
+                                                        className="form-control"
+                                                        value={this.state.checkedDate} validations={[required]}
+                                                        name="checkedDate" id="checkedDate"
+                                                        data-date-format="dd/mm/yyyy"
+                                                        data-provide="datepicker" />
+                                                    <div className="input-group-append">
+                                                        <span className="input-group-text"><i
+                                                            className="fa fa-calendar"></i></span>
+                                                    </div>
+                                                </div>
+                                                {/* <Input className="form-control" type="datetime" name="checkedDate" id="checkedDate" value={this.state.checkedDate} validations={[required]} />*/}
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Thương hiệu</label>
+                                                <Select className="form-control"
+                                                    name="manufacture"
+                                                    validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.props.listManufacturers.map((item, index) => <option
+                                                        value={index} key={index}>{item.name}</option>)}
+                                                </Select>
+                                            </div>
+                                            {/* <div className="form-group">
+                                                <label>Thương nhân sở hữu</label>
+                                                <Select className="form-control"
+                                                        name="factory"
+                                                        validations={[required]}>
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.props.listFactory.map((item, index) => <option value={index}>{item.name}</option>)}
+                                                </Select>
+                                            </div> */}
+                                            {/* <div className="form-group">
+                                                <label>Cửa hàng bán lẻ</label>
+                                                <Select className="form-control"
+                                                        name="agency"
+                                                        >
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.props.listAgency.map((item, index) => <option value={index}>{item.name}</option>)}
+                                                </Select>
+                                            </div> */}
+                                        </div>
+                                        <div className="col-md-6">
+                                            <div className="form-group group">
+                                                {/* <label>{this.state.user_type === "Factory" ? "Vị trí hiện tại: Tại thương nhân sở hữu" : "Vị trí hiện tại: Tại cửa hàng bán lẻ"} </label> */}
+
+                                                <Radio.Group onChange={this.onChange} value={value} className="">
+                                                    <Radio onChange={this.onChange} style={radioStyle} value={1} id="factoryy" name="factoryy">
+                                                        <label onChange={this.onChange} id="factoryy" name="factoryy">{this.state.user_type === "Factory" ? "Vị trí hiện tại: Tại thương nhân sở hữu" : "Vị trí hiện tại: Tại cửa hàng bán lẻ"} </label>
+                                                    </Radio>
+                                                    <Radio style={radioStyle} value={2} id="group1">
+
+                                                        <label className="group1">{this.state.user_role === "cylinderAt_childFactory" ? "Vị trí hiện tại: Tại thương nhân sở hữu" : "Vị trí hiện tại: Tại công ty con"} </label>
+                                                        <Select className="form-control control1"
+                                                            id="listconttycon"
+                                                            name="listconttycon"
+                                                            style={{ display: 'none', position: 'relative', top: '50px' }}
+                                                            onChange={this.onChange}
+                                                        >
+                                                            <option value="">-- Chọn --</option>
+                                                            {this.options.map((item, index) => <option
+                                                                value={item.value} key={index}>{item.label}</option>)}
+                                                        </Select>
+
+                                                    </Radio>
+                                                    <Radio style={radioStyle} value={3} className="value3" >
+                                                        <label className="value3">Vị trí hiện tại: Đối tác cho thuê</label>
+                                                        <Select className="form-control"
+                                                            id="doitac"
+                                                            name="doitac"
+                                                            style={{ display: 'none' }}
+                                                            onChange={this.onChange}
+                                                        >
+                                                            <option value="">-- Chọn --</option>
+                                                            {this.state.options2.map((item, index) => <option
+                                                                value={item.value} key={index}>{item.label}</option>)}
+                                                        </Select>
+                                                    </Radio>
+                                                </Radio.Group>
+
+
+                                                {/* <Select className="form-control"
+                                                    id="doitac"
+                                                    name="doitac"
+                                                    style={{ display: 'none' }}
+                                                    onChange={this.onChange}
+                                                >
+                                                    <option value="">-- Chọn --</option>
+                                                    {this.state.options2.map((item, index) => <option
+                                                        value={item.value} key={index}>{item.label}</option>)}
+                                                </Select> */}
+                                                {/* <label>{this.state.user_type === "Factory" ? "Vị trí hiện tại: Tại thương nhân sở hữu" : "Vị trí hiện tại: Tại cửa hàng bán lẻ"} </label> */}
+                                            </div>
+                                        </div>
+
+                                        <div className="col-md-6">
+
+
+                                        </div>
+
+                                    </div>
+
+                                    {/*<div className="form-group">*/}
+                                    {/*<label>Các vị trí</label>*/}
+                                    {/*<TagAutoComplete getPosition={this.getPosition.bind(this)}*/}
+                                    {/*data={this.state.job_titles}/>*/}
+                                    {/*</div>*/}
+
+                                </div>
+
+                                <footer className="card-footer text-center">
+                                    <Button className="btn btn-primary">Lưu</Button>
+                                    <button className="btn btn-secondary" type="reset" data-dismiss="modal"
+                                        style={{ marginLeft: "10px" }}>Đóng
+                                    </button>
+                                </footer>
+                            </Form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+AddProductPopup.propType = {
+    addStore: PropType.func.isRequired,
+    jobMetaData: PropType.object.isRequired,
+    updateStoreImage: PropType.func.isRequired
+};
+
+export default AddProductPopup;

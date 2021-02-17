@@ -1,0 +1,78 @@
+import React, { Component } from "react";
+import { Row, Col, Icon } from "antd";
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Legend,
+    Tooltip,
+    XAxis,
+    YAxis,
+    PieChart,
+    Pie,
+    Sector,
+    Cell,
+    Text,
+    ResponsiveContainer,
+    Line,
+  } from "recharts";
+export default class ShowPieChart extends Component {
+  render() {
+    return (
+      <Col className="container">
+        <Col className="modal fade" id="shoe-piechart" tabIndex="-1">
+          <Col className="modal-dialog modal-lg">
+            <Col className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Biểu đồ tồn kho</h5>
+                <button type="button" className="close" data-dismiss="modal">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <Col className="modal-body">
+                <ResponsiveContainer height={600} width="100%">
+                  <PieChart>
+                    <Pie
+                      data={
+                        this.props.checkDataChart.length === 0
+                          ? this.props.dataPieChart
+                          : this.props.data
+                      }
+                      labelLine={false}
+                      label={this.props.renderCustomizedLabel}
+                      outerRadius={220}
+                      cx="50%"
+                      cy={180}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {this.props.checkDataChart.length === 0
+                        ? this.props.dataPieChart.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={this.props.COLORS[index % this.props.COLORS.length]}
+                            />
+                          ))
+                        : this.props.data.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={this.props.COLORS[index % this.props.COLORS.length]}
+                            />
+                          ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Col>
+            </Col>
+          </Col>
+        </Col>
+      </Col>
+    );
+  }
+}

@@ -1,0 +1,210 @@
+import React from 'react';
+import PropType from 'prop-types';
+import Form from 'react-validation/build/form';
+import Input from 'react-validation/build/input';
+import Select from 'react-validation/build/select';
+import Button from 'react-validation/build/button';
+import required from 'required';
+import isUppercase from 'isUppercase'
+import getUserCookies from "getUserCookies";
+
+const USERTYPE_ENUM = [
+    {
+        key: 'SuperAdmin',
+        value: 'Quản trị viên'
+    },
+    {
+        key: 'Staff',
+        value: 'Nhân viên'
+    },
+
+]
+
+class AddUserPopup extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.form = null;
+        this.state = {
+            content: '',
+            checked: false,
+        };
+    }
+
+    async submit(event) {
+
+        event.preventDefault();
+        if(this.props.isCreateMode)
+        {
+            var user_cookies = await getUserCookies();
+            let isChildOf = '';
+            if (user_cookies) {
+                isChildOf = user_cookies.user.id;
+            }
+    
+            let data = this.form.getValues();
+            let result = false;
+            if (this.props.isStationPage) {
+                result = await this.props.addUser(data.email, data.name, data.address, "", "Station", isChildOf,'',this.state.checked);
+            } else if (this.props.isFactoryPage) {
+                result = await this.props.addUser(data.email, data.name, data.address, "", "Factory", isChildOf,'',this.state.checked);
+            } else if (this.props.isGeneralPage) {
+                result = await this.props.addUser(data.email, data.name, data.address, "", "General", isChildOf,'',this.state.checked);
+            } else if (this.props.isAgencyPage) {
+                result = await this.props.addUser(data.email, data.name, data.address, "", "Agency", isChildOf,'',this.state.checked);
+            } else if (this.props.isFixerPage) {
+                result = await this.props.addUser(data.email, data.name, data.address, "", "Fixer", isChildOf, USERTYPE_ENUM[parseInt(data.userType)].key,this.state.checked);
+            } else if (this.props.isFactoryChildPage) {
+                result = await this.props.addUser(data.email, data.name, data.address, "", "Factory", isChildOf, 'Owner',this.state.checked);
+            }else {
+                result = await this.props.addUser(data.email, data.name, data.address, "", USERTYPE_ENUM[parseInt(data.userType)].key, isChildOf,this.state.checked);
+            }
+    
+            if (result) {
+                const modal = $("#create-user");
+                modal.modal('hide');
+            }
+        }
+        else{
+            var user_cookies = await getUserCookies();
+          
+            let data = this.form.getValues();
+            let result = false;
+            result = await this.props.updateUser(this.props.isEditForm.id, data.name,data.password, data.address);
+    
+            if (result) {
+                const modal = $("#create-user");
+                modal.modal('hide');
+            }
+        }
+
+        return;
+    }
+
+    handleChangeSelect = () => {
+        this.setState({checked: !this.state.checked})
+    }
+
+    render() {
+        return (
+            <div className="modal fade" id="create-user" tabIndex="-1">
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">{this.props.isCreateMode?"Tạo Mới Người Dùng":"Chỉnh Sửa Người Dùng"}</h5>
+                            <button type="button" className="close" data-dismiss="modal">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+
+                            <Form ref={c => {
+                                this.form = c
+                            }}
+                                  className="card" onSubmit={(event) => this.submit(event)}>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-6">
+
+                                            <div className="form-group">
+                                                <label>Địa chỉ Email </label>
+                                                <Input disabled={!this.props.isCreateMode} className="form-control" type="text" name="email" id="email"
+                                                       value={!!this.props.isEditForm?this.props.isEditForm.email:''} validations={[required, isUppercase]}/>
+                                            </div>
+                                        </div>
+                                        <div className="col-md-6">
+                                            <div className="form-group">
+                                                <label>Tên người dùng </label>
+                                                <Input className="form-control" type="text" name="name" id="name"
+                                                       value={!!this.props.isEditForm?this.props.isEditForm.name:''} validations={[required]}/>
+                                            </div>
+                                        </div>
+                                        <div className="col-md-12">
+                                            <div className="form-group">
+                                                <label>Địa chỉ </label>
+                                                <Input className="form-control" type="text" name="address" id="address"
+                                                       value={!!this.props.isEditForm?this.props.isEditForm.address:''} validations={[required]}/>
+                                            </div>
+                                        </div>
+                                        {this.props.isCreateMode === false 
+                                        && (
+                                            <div className="col-md-12">
+                                            <div className="form-group">
+                                                <label>Mật Khẩu </label>
+                                                <Input className="form-control" type="password" name="password" id="password"
+                                                       />
+                                            </div>
+                                        </div>
+                                        )}
+                                        {this.props.isFixerPage ? (
+                                            <div className="col-md-6">
+                                                <div className="form-group">
+                                                    <label>Quyền</label>
+                                                    <Select className="form-control"
+                                                            name="userType"
+                                                    >
+                                                        <option value="">-- Chọn --</option>
+                                                        {USERTYPE_ENUM.map((item, index) => <option
+                                                            value={index}>{item.value}</option>)}
+                                                    </Select>
+                                                    {/*<Input className="form-control" type="text" name="color" id="color" value={this.state.color} validations={[required]} />*/}
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                        {
+                                            this.props.isStationPage || this.props.isFactoryPage || this.props.isGeneralPage || this.props.isAgencyPage || this.props.isFixerPage || this.props.isFactoryChildPage? null : (
+                                                <div className="col-md-6">
+                                                    <div className="form-group">
+                                                        <label>Loại người dùng </label>
+                                                        <Select className="form-control"
+                                                                name="userType"
+                                                        >
+                                                            <option value="">-- Chọn --</option>
+                                                            {USERTYPE_ENUM.map((item, index) => <option
+                                                                value={index}>{item.value}</option>)}
+                                                        </Select>
+                                                        {/*<Input className="form-control" type="text" name="color" id="color" value={this.state.color} validations={[required]} />*/}
+                                                    </div>
+                                                </div>)
+                                        }
+                                        {this.props.isCreateMode && (  <div className="col-md-6">
+                                            <div className="form-group" style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                marginTop: 32
+                                            }}>
+                                                <label>Trực thuộc</label>
+                                                <input type="checkbox"
+                                                       onChange={() => this.handleChangeSelect()}
+                                                       value={this.state.checked}
+                                                />
+                                            </div>
+                                        </div>)}
+                                      
+
+                                    </div>
+
+                                    {/*<div className="form-group">*/}
+                                    {/*<label>Các vị trí</label>*/}
+                                    {/*<TagAutoComplete getPosition={this.getPosition.bind(this)}*/}
+                                    {/*data={this.state.job_titles}/>*/}
+                                    {/*</div>*/}
+
+                                </div>
+
+                                <footer className="card-footer text-center">
+                                    <Button className="btn btn-primary">Lưu</Button>
+                                    <button className="btn btn-secondary" type="reset" data-dismiss="modal"
+                                            style={{marginLeft: "10px"}}>Đóng
+                                    </button>
+                                </footer>
+                            </Form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+export default AddUserPopup;

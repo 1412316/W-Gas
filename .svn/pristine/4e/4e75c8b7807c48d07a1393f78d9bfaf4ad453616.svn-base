@@ -1,0 +1,102 @@
+import React from "react";
+import PropType from "prop-types";
+import Form from "react-validation/build/form";
+import Input from "react-validation/build/input";
+import Select from "react-validation/build/select";
+import Button from "react-validation/build/button";
+import required from "required";
+import isUppercase from "isUppercase";
+import showToast from "showToast";
+import getUserCookies from "./../../helpers/getUserCookies";
+import {IMPORTCYLINDERBYEXCEL} from './../../config/config';
+import callApi from "./../../util/apiCaller";
+let file = null;
+class RequestExcel extends React.Component {
+  constructor(props) {
+    super(props);
+    this.form = null;
+    this.state = {};
+  }
+  handleFileUpload(event) {
+    file = event.target.files[0];
+  }
+  //cmt
+  async submit(event) {
+    event.preventDefault();
+    if (!file) showToast("Vui lòng chọn file!", 3000);
+    else {
+        
+            const user_cookies = await getUserCookies();
+            let data = new FormData();
+            data.append('upload_file', file);
+            data.append('id_ReqTo',user_cookies.user.owner);
+            let token="Bearer " + user_cookies.token;
+            await callApi("POST",IMPORTCYLINDERBYEXCEL,data,token).then(res=>{
+              //console.log(user_cookies.user.owner);
+                console.log(res)
+            })
+        
+    }
+    //console.log(user_cookies);
+  }
+
+  render() {
+    return (
+      <div className="modal fade" id="create-request-excel" tabIndex="-1">
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Tạo bình</h5>
+              <button type="button" className="close" data-dismiss="modal">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <Form
+                ref={(c) => {
+                  this.form = c;
+                }}
+                className="card"
+                onSubmit={(event) => this.submit(event)}
+              >
+                <div className="card-body">
+                  <div className="row">
+                  
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label>Chọn file excel </label>
+                        <Input
+                          //  disabled={this.props.isEditForm}
+                          className="form-control"
+                          type="file"
+                          name="fileexcel"
+                          id="fileexcel"
+                          onChange={this.handleFileUpload}
+                          validations={[required]}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <footer className="card-footer text-center">
+                  <Button className="btn btn-primary">Lưu</Button>
+                  <button
+                    className="btn btn-secondary"
+                    type="reset"
+                    data-dismiss="modal"
+                    style={{ marginLeft: "10px" }}
+                  >
+                    Đóng
+                  </button>
+                </footer>
+              </Form>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default RequestExcel;

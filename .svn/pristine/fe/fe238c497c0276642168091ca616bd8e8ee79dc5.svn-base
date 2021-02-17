@@ -1,0 +1,14 @@
+.kiemdinh {
+    //white-space: nowrap;
+    width: 150px;
+    // border: 1px solid #000000;
+    //overflow: hidden;
+    //text-overflow: ellipsis;
+}
+/*.kiemdinh:hover {
+    overflow: visible;
+    width: 160px;
+}*/
+.input-group {
+    flex-wrap: nowrap;
+}
